@@ -6,13 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: echo "::set-env name=TEST_SECRET::${{ secrets.TEST_SECRET }}"
-      - run: echo $TEST_SECRET
+      - run: 'echo "$TEST_SECRET" > secret && export SECRET=secret' 
+        shell: bash
+        env:
+          TEST_SECRET: ${{secrets.TEST_SECRET}}
       - uses: cschleiden/replace-tokens@v1
         with:
           files: '["k8s/deployment/kube.yaml"]'
         env:
           NAMESPACE: spa-qa
+          SECRET: ${{ env.SECRET }}
       - name: Check the contents
         run: cat "k8s/deployment/kube.yaml"
       - name: Send custom JSON data to Slack workflow
