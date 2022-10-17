@@ -6,6 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: cschleiden/replace-tokens@v1
+        with:
+          files: '["k8s/deployment/kube.yaml"]'
+        env:
+          NAMESPACE: spa-qa
+      - name: Check the contents
+        run: cat "k8s/deployment/kube.yaml"
       - name: Send custom JSON data to Slack workflow
         id: slack
         uses: slackapi/slack-github-action@v1.18.0
