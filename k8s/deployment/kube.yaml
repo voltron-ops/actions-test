@@ -4,3 +4,134 @@ metadata:
   name: #{NAMESPACE}#
   labels:
     name: #{NAMESPACE}#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+  namespace: #{NAMESPACE}#
+data:
+  .dockerconfigjson: ewogImF1dGhzIjogewogICJzbnBtLWRvY2tlci1xYS50ZWNoc3R5bGUubmV0IjogewogICAgImF1dGgiOiAiVTFaRFgwcGxibXRwYm5OZlJHOWphMlZ5T2xnMVMxYzBhRlpRZW5CcFUxSXlNUT09IiwKICAgICJlbWFpbCI6ICJqZW5raW5zQHRlY2hzdHlsZS5jb20iCiAgfQogfQp9Cg==
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: #{SERVICE_NAME}#-configmap
+  namespace: #{NAMESPACE}#
+data:
+  BUILD: #{BUILD_NUMBER}#
+  branch:      #{SOURCE_BRANCH}#
+  commitHash:  #{GIT_COMMIT}#
+  PORT:        #{SERVICE_PORT}#
+  HOME:        #{SERVICE_HOME}#
+  NODE_ENV:    #{NODE_ENV}#
+  NPM_TOKEN:   #{NPM_TOKEN}#
+
+
+  # SERVICE_TOKEN: $SERVICE_TOKEN
+  NODE_CONFIG_ENV: #{NODE_CONFIG_ENV}#
+  X_SERVICE_TOKEN: #{X_SERVICE_TOKEN}#
+  CF_DATABASE: #{CF_DATABASE}#
+  BRANCH_ecom_components: #{BRANCH_ecom_components}#
+  BRANCH_retail_components: #{BRANCH_retail_components}#
+  BRACH_ret_api_rpc_site: #{BRACH_ret_api_rpc_site}#
+  CF_ENV: #{CF_ENV}#
+  HTTPS: #{HTTPS}#
+  ENVBUILD: #{envbuild}#
+  HOST: #{HOST}#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: #{SERVICE_NAME}#-service
+  namespace: $NAMESPACE
+  labels:
+    app: #{SERVICE_NAME}#-app
+spec:
+  type: ClusterIP
+  selector:
+    app: #{SERVICE_NAME}#-app
+  ports:
+  - port: #{SERVICE_PORT}#
+    protocol: TCP
+    targetPort: #{SERVICE_PORT}#
+    name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: #{SERVICE_NAME}#-deployment
+  namespace: #{NAMESPACE}#
+  labels:
+    app: #{SERVICE_NAME}#-app
+spec:
+  replicas: #{NUM_OF_REPLICAS}#
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: #{SERVICE_NAME}#-app
+  template:
+    metadata:
+      labels:
+        app: #{SERVICE_NAME}#-app
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: #{SERVICE_NAME}#
+        image: #{DOCKER_IMAGE_NAME}#:#{DOCKER_IMAGE_TAG}
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: #{SERVICE_HEALTH_CHECK}#
+            port: #{SERVICE_PORT}#
+            httpHeaders:
+            - name: Custom-Header
+              value: Awesome
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: #{SERVICE_HEALTH_CHECK}#
+            port: #{SERVICE_PORT}#
+            httpHeaders:
+            - name: Custom-Header
+              value: Awesome
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 3
+        envFrom:
+        - configMapRef:
+            name: #{SERVICE_NAME}#-configmap
+        ports:
+        - containerPort: #{SERVICE_PORT}#
+        # resources:
+        #   requests:
+        #     cpu: $REQUESTED_CPU
+        #     memory: $REQUESTED_MEMORY
+        #     ephemeral-storage: $REQUESTED_STORAGE
+        #   limits:
+        #     cpu: $LIMIT_CPU
+        #     memory: $LIMIT_MEMORY
+        #     ephemeral-storage: $LIMIT_STORAGE
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: #{SERVICE_NAME}#-ingress
+  namespace: #{NAMESPACE}#
+spec:
+  rules:
+  - host: #{INGRESS_FQDN}#
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: #{SERVICE_PORT}#-service
+          servicePort: #{SERVICE_PORT}# 
+  # tls:
+  # - hosts:
+  #   - $INGRESS_FQDN
+  #   secretName: techstyle-tech-cert
