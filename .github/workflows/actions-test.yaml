@@ -1,23 +1,34 @@
-name: Fabletics K8S QA
-run-name: Fabletics K8S QA
-on: [push]
+name: K8S QA
+run-name: K8S QA
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
 jobs:
   check-bats-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: 'echo "$TEST_SECRET" > secret && export SECRET=secret && echo $SECRET' 
-        shell: bash
-        env:
-          TEST_SECRET: ${{secrets.TEST_SECRET}}
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          
       - uses: cschleiden/replace-tokens@v1
         with:
           files: '["k8s/deployment/kube.yaml"]'
         env:
           NAMESPACE: spa-qa
           SECRET: ${{ env.SECRET }}
+          
       - name: Check the contents
         run: cat "k8s/deployment/kube.yaml"
+        
+      - name: Check Branch Name
+        run: echo ${{ github.event.pull_request.head.ref }}
+        
       - name: Send custom JSON data to Slack workflow
         id: slack
         uses: slackapi/slack-github-action@v1.18.0
