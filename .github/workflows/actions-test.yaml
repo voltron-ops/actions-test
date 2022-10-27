@@ -19,7 +19,7 @@ jobs:
       
       - name: Create sanitized Subdomain Prefix
         id: subdomain-sanitize
-        uses: LarsenLP/actions-find-and-replace-string@3
+        uses: LarsenLP/actions-find-and-replace-string@v3
         with:
           source: "www.remix.com"
           find: '.'
