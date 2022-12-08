@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       
       - name: Create sanitized Subdomain Prefix
         id: subdomain-sanitize
@@ -28,7 +28,7 @@ jobs:
       - name: Set Branch Name
         shell: bash
         run: |
-          echo "branch_name=$(echo ${{ github.event.pull_request.head.ref }})" >> $GITHUB_ENV
+          echo "branch_name=$(echo ${{ github.event.pull_request.head.ref || github.ref_name }})" >> $GITHUB_ENV
           
       - name: Echo the output
         shell: bash 
@@ -37,7 +37,7 @@ jobs:
       - name: Set the value
         id: step_one
         run: |
-          echo "branch_sanitize=$(echo ${{ github.event.pull_request.head.ref }} | sed -e 's/_/-/g' -e 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+          echo "branch_sanitize=$(echo ${{ github.event.pull_request.head.ref || github.ref_name }} | sed -e 's/_/-/g' -e 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - name: Use the value
         id: step_two
         run: |
