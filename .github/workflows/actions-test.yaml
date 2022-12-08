@@ -24,7 +24,12 @@ jobs:
           source: "www.remix.com"
           find: '.'
           replace: '-'
-      
+
+      - name: Set Branch Name
+        shell: bash
+        run: |
+          echo "branch_name=$(echo ${{ github.event.pull_request.head.ref }})" >> $GITHUB_ENV
+          
       - name: Echo the output
         shell: bash 
         run: echo ${{ steps.subdomain-sanitize.outputs.value }}
@@ -32,11 +37,12 @@ jobs:
       - name: Set the value
         id: step_one
         run: |
-          echo "branch_sanitize=$(echo "feature/BMID-345-remix_test" | sed -e 's/_/-/g' -e 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+          echo "branch_sanitize=$(echo ${{ github.event.pull_request.head.ref }} | sed -e 's/_/-/g' -e 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - name: Use the value
         id: step_two
         run: |
           echo "${{ env.branch_sanitize }}"
+          echo "${{ env.branch_name }}"
   
 #       - name: Check the deployed service URL
 #         uses: jtalk/url-health-check-action@v2
